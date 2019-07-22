@@ -14,15 +14,6 @@ def get_github_event(github_event_path):
     return github_event
 
 
-def ignore_event(github_event):
-    # Ignore push events on deleted branches
-    deleted = "{deleted}".format(**github_event)
-    if deleted == "True":
-        print("Ignoring delete branch event.")
-        return True
-    return False
-
-
 def pr_branch_exists(repo, branch):
     for ref in repo.remotes.origin.refs:
         if ref.name == ("origin/%s" % branch):
@@ -103,25 +94,24 @@ def process_event(github_event, repo, branch):
 
 # Get the JSON event data
 github_event = get_github_event(os.environ['GITHUB_EVENT_PATH'])
-# Check if this event should be ignored
-if not ignore_event(github_event):
-    # Set the repo to the working directory
-    repo = Repo(os.getcwd())
 
-    # Fetch/Set the branch name
-    branch = os.getenv('PULL_REQUEST_BRANCH', 'create-pull-request/patch')
-    # Suffix with the short SHA1 hash
-    branch = "%s-%s" % (branch, get_head_short_sha1(repo))
+# Set the repo to the working directory
+repo = Repo(os.getcwd())
 
-    # Check if a PR branch already exists for this HEAD commit
-    if not pr_branch_exists(repo, branch):
-        # Check if there are changes to pull request
-        if repo.is_dirty() or len(repo.untracked_files) > 0:
-            print("Repository has modified or untracked files.")
-            process_event(github_event, repo, branch)
-        else:
-            print("Repository has no modified or untracked files. Skipping.")
+# Fetch/Set the branch name
+branch = os.getenv('PULL_REQUEST_BRANCH', 'create-pull-request/patch')
+# Suffix with the short SHA1 hash
+branch = "%s-%s" % (branch, get_head_short_sha1(repo))
+
+# Check if a PR branch already exists for this HEAD commit
+if not pr_branch_exists(repo, branch):
+    # Check if there are changes to pull request
+    if repo.is_dirty() or len(repo.untracked_files) > 0:
+        print("Repository has modified or untracked files.")
+        process_event(github_event, repo, branch)
     else:
-        print(
-            "Pull request branch '%s' already exists for this commit. Skipping." %
-            branch)
+        print("Repository has no modified or untracked files. Skipping.")
+else:
+    print(
+        "Pull request branch '%s' already exists for this commit. Skipping." %
+        branch)
