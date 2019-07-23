@@ -9,8 +9,7 @@ from github import Github
 def get_github_event(github_event_path):
     with open(github_event_path) as f:
         github_event = json.load(f)
-    if os.environ.get('DEBUG_EVENT') is not None:
-        print(json.dumps(github_event, sort_keys=True, indent=2))
+    print(json.dumps(github_event, sort_keys=True, indent=2))
     return github_event
 
 
